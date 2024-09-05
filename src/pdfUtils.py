@@ -11,7 +11,7 @@ import gc
 
 def watermark_template( 
     watermark    = "SAMPLE", font_name = "Helvetica-Bold", font_size = 25, fill_color = '#DD5555',
-    fill_opacity = 0.15, rotate = 00, row = 6, column = 6, page_w = None, page_h = None):
+    fill_opacity = 0.15, rotate = 30, row = 6, column = 6, page_w = None, page_h = None):
     watermark        = watermark.replace("\\n", "\n")
     mask_stream      = BytesIO()
     row_pitch        = (page_h / (row    -1 )) if (row    > 1) else 0
@@ -37,10 +37,11 @@ def watermark_template(
             yi = y + row_pitch    * r
 
             for l, line in enumerate(lines):
-                xl = xi
-                yl = yi - (l * font_size)
-                xr =   xl * math.cos(rad) + yl * math.sin(rad)
-                yr = - xl * math.sin(rad) + yl * math.cos(rad)
+                lsp = (l * font_size)
+                xl  = xi
+                yl  = yi - (l * font_size)
+                xr  =   xl * math.cos(rad) + yl * math.sin(rad) + math.sin(rad) * lsp
+                yr  = - xl * math.sin(rad) + yl * math.cos(rad)
                 watermark_canvas.drawCentredString(xr, yr, line)
     watermark_canvas.restoreState()
     watermark_canvas.save()
