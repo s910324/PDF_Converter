@@ -10,6 +10,7 @@ from   multiprocessing          import Process
 from   taskListView             import TaskListView
 from   misc                     import PorotechIcon
 from   watermarkSetup           import WatermarkUI
+from   pyqttoast                import Toast, ToastPreset
 from   pdfProcessor             import *
 
 file_ext = ["doc", "docx", "ppt", "pptx", "pdf"]
@@ -18,10 +19,10 @@ debug    = Debugger()
 class PDFConvertWidget(QWidget):
 	def __init__(self):
 		super().__init__()
-		self.runState          = False
-		self.currentProcessor  = None
-		self.control           = WatermarkUI()
-		self.layout            = QGridLayout()
+		self.runState         = False
+		self.currentProcessor = None
+		self.control          = WatermarkUI()
+		self.layout           = QGridLayout()
 		
 		self.layout.addWidget (self.control,          0, 0, 2, 1)
 		self.layout.addLayout (self.listUISetup(),    0, 1, 1, 1)
@@ -30,19 +31,20 @@ class PDFConvertWidget(QWidget):
 
 		self.setLayout(self.layout)
 		self.signalSetup()
-		self.resize(750,550)
+		self.resize(950,300)
 		self.setWindowTitle ("PDF Converter")
 		self.setWindowIcon(PorotechIcon().icon);
-
+		self.control.loadValue()
+			
 	def listUISetup(self):
-		self.float_layout      = QGridLayout()
-		self.task_listwidget   = TaskListView()
-		self.background_label  = QLabel(f"Drag / Drop documents\n\n Supported format: {', '.join([e.lower() for e in file_ext])}")
-		self.delete_button     = QPushButton("clear")
+		self.float_layout     = QGridLayout()
+		self.task_listwidget  = TaskListView()
+		self.background_label = QLabel(f"Drag / Drop documents\n\n\nSupported format: \n{', '.join([e.lower() for e in file_ext])}")
+		self.delete_button    = QPushButton("clear")
 
 		self.delete_button.setFixedSize(45, 25)
 		self.background_label.setAlignment(Qt.AlignCenter)
-		self.background_label.setStyleSheet("font-size: 20px; color:#aaa;")
+		self.background_label.setStyleSheet("font-size: 20px; color:#aaa; font-family: Calibri; font-style: normal;font-size: 18pt; ")
 		self.delete_button.clicked.connect(lambda : self.task_listwidget.clear())
 		self.task_listwidget.setDragDropMode(QAbstractItemView.DragDrop)
 		self.task_listwidget.setMinimumHeight(200)
@@ -54,8 +56,8 @@ class PDFConvertWidget(QWidget):
 
 		
 	def executeUISetup(self):
-		self.execute_layout     = QHBoxLayout()
-		self.execute_button     = QPushButton("execute")
+		self.execute_layout = QHBoxLayout()
+		self.execute_button = QPushButton("execute")
 		self.execute_layout.addStretch()
 		self.execute_layout.addWidget (self.execute_button)
 		self.execute_layout.addStretch()
@@ -66,27 +68,14 @@ class PDFConvertWidget(QWidget):
 
 	def closeEvent(self, event):
 		self.task_listwidget.model().modelReset.disconnect()
+		self.control.saveValue()
 		event.accept()
 
 	def executeProcess(self):
 		self.setRunState(not(self.runState))
 		
 		if self.runState:
-			arg = {
-				"watermark"     : "POROTECH Confidential", 
-				"font_name"     : "Helvetica-Bold", 
-				"font_size"     : 25, 
-				"fill_color"    : '#DD5555',        
-				"fill_opacity"  : 0.15, 
-				"x"             : -500, 
-				"y"             : 500, 
-				"rotate"        : 30, 
-				"row"           : 15, 
-				"column"        : 15, 
-				"row_pitch"     : None, 
-				"column_pitch"  : None
-			}
-
+			arg = self.control.value()
 			p   = Process(target = self.processFile(arg))
 			p.start()
 			p.join()
@@ -94,6 +83,15 @@ class PDFConvertWidget(QWidget):
 		else:
 			if self.currentProcessor:
 				self.currentProcessor.run = False
+
+	def notice(self, title, information):
+		self.toast = Toast()
+		self.toast.setDuration(5000)  # Hide after 5 seconds
+		self.toast.setTitle(title)
+		self.toast.setText(information)
+		self.toast.applyPreset(ToastPreset.SUCCESS)  # Apply style preset
+		self.toast.show()				
+
 
 	def processFile(self, arg):
 
@@ -112,6 +110,7 @@ class PDFConvertWidget(QWidget):
 				self.currentProcessor = procrssor
 				procrssor.percentage.connect(lambda value : widget.setProgress(int(value)))
 				procrssor.fileError.connect( lambda       : widget.setError("Not exist"))
+				procrssor.finished.connect( lambda  path  : self.notice("File saved", f"Path {path}"))
 				procrssor.process(**arg)
 			else:
 				debug.print("Invalid item %s" % in_name)
@@ -133,6 +132,5 @@ if __name__ == '__main__':
 	debug.debug  = True
 	app    = QApplication(sys.argv)
 	window = PDFConvertWidget()
-	# window.setStyleSheet("QWidget{font-size: 11px;}")
 	window.show()
 	sys.exit(app.exec_())
