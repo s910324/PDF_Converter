@@ -11,7 +11,7 @@ import gc
 
 def watermark_template( 
     watermark    = "SAMPLE", font_name = "Helvetica-Bold", font_size = 25, fill_color = '#DD5555',
-    fill_opacity = 0.15, rotate = 30, row = 6, column = 6, page_w = None, page_h = None):
+    fill_opacity = 0.15, rotate = 00, row = 6, column = 6, page_w = None, page_h = None):
     watermark        = watermark.replace("\\n", "\n")
     mask_stream      = BytesIO()
     row_pitch        = (page_h / (row    -1 )) if (row    > 1) else 0
