@@ -1,4 +1,4 @@
 PyPDF2
 reportlab
 comtypes
-pyqt-toast
+pyqt-toast-notification

@@ -18,9 +18,11 @@ class PDFProcessor(QObject):
     def process(self, **kwards):
         filePath    = kwards.pop('filePath')
         parent_path = Path(os.path.realpath(__file__)).parent.parent.absolute()
-        temp_path   = os.path.abspath(os.path.join(parent_path, "temp_files", f"{Path(filePath).stem}.pdf" ))
+        temp_path   = os.path.abspath(os.path.join(parent_path, "temp_files"))
+        temp_file   = os.path.join( temp_path, f"{Path(filePath).stem}.pdf" )
         out_path    = os.path.abspath(os.path.join(os.path.dirname(filePath), f"{Path(filePath).stem}.pdf" ))
-
+        Path(temp_path).mkdir(parents=True, exist_ok=True)
+        
         if not(os.path.isfile(filePath)):
             self.fileError.emit()
             debug.print("File not exist or format error")
@@ -29,11 +31,11 @@ class PDFProcessor(QObject):
         self.percentage.emit(5)
         QCoreApplication.processEvents()
 
-        temp_path = pdf.file_to_PDF(filePath, temp_path)
+        temp_file = pdf.file_to_PDF(filePath, temp_file)
         self.percentage.emit(60)
         QCoreApplication.processEvents()
 
-        w, h      = pdf.pdf_src(temp_path)
+        w, h      = pdf.pdf_src(temp_file)
         self.percentage.emit(70)
         QCoreApplication.processEvents()
 
@@ -43,12 +45,12 @@ class PDFProcessor(QObject):
         self.percentage.emit(80)
         QCoreApplication.processEvents()
 
-        output_name = pdf.apply_watermark(filename = temp_path, mask = template, output_name = out_path)
+        output_name = pdf.apply_watermark(filename = temp_file, mask = template, output_name = out_path)
         self.percentage.emit(95)
         QCoreApplication.processEvents()
 
         if not(filePath.lower().endswith("pdf")):
-            pdf.remove_temp(temp_path)
+            pdf.remove_temp(temp_file)
         self.percentage.emit(100.0)
         self.finished.emit(output_name)
         QCoreApplication.processEvents()

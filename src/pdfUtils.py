@@ -7,7 +7,11 @@ from   reportlab.pdfgen     import canvas
 from   reportlab.lib.units  import mm, inch
 from   reportlab.lib.colors import Color
 import comtypes.client
-import gc
+import logging
+
+logging.basicConfig(level=logging.WARNING)
+log = logging.getLogger()
+
 
 def watermark_template( 
     watermark    = "SAMPLE", font_name = "Helvetica-Bold", font_size = 25, fill_color = '#DD5555',
@@ -84,38 +88,48 @@ def apply_watermark(filename, mask, output_name = None, apply_front = True, appl
 
 
 def file_to_PDF(filename, output_name = None):
-    fmt        = 0
     filename   = os.path.abspath(filename)
     type_check = filename.lower()
 
+    log.debug(f"File input {filename}")
     if not(os.path.isfile(filename)) : return None
     if type_check.endswith("pdf") : return filename
 
     try:
         if not output_name:
-            output_name = f"{os.path.splitext(filename)[0]}.pdf"   
+            output_name = f"{os.path.splitext(filename)[0]}.pdf"
 
-        app = None
+        log.debug(f"file output {output_name}")
+
+        fmt    = 0
+        app    = None
+        opener = None
         if type_check.endswith(("ppt", "pptx")):
             fmt         = 32
             app         = comtypes.client.CreateObject("Powerpoint.Application", dynamic = True)
             app.Visible = 1
             opener      = app.Presentations
+            log.debug(f"File opener : Powerpoint.Application")
 
         elif type_check.endswith(("doc", "docx")):
             fmt         =  17
             app         = comtypes.client.CreateObject("Word.Application", dynamic = True)
             app.Visible = 1
             opener      = app.Documents
+            log.debug(f"File opener : Word.Application")
 
+        log.debug(f"File opened")
         deck = opener.Open(filename)
         deck.SaveAs(output_name, fmt)
         deck.Close()
         
-    except:
+    except Exception as e:
         output_name = None
+        log.debug(f"File open error: {e}")
 
     if app : app.Quit()
+
+    log.debug(f"File saved as {output_name}")
     return output_name
 
 def remove_temp(temp_path):
@@ -130,13 +144,15 @@ if __name__ == '__main__':
     # filePath    = r'.\src\example_files\example.docx'
     # filePath    = r'.\src\example_files\example.pdf'
     watermark   = "SAMPLE\nSecond line"
-
-    temp_path   = os.path.abspath(os.path.join(         r"..\temp_files", f"{Path(filePath).stem}.pdf" ))
+    
+    temp_path   = os.path.abspath(r"..\temp_files")
+    temp_file   = os.path.join(temp_path, f"{Path(filePath).stem}.pdf" )
     out_path    = os.path.abspath(os.path.join(os.path.dirname(filePath), f"{Path(filePath).stem}.pdf" ))
-    temp_path   = file_to_PDF(filePath, temp_path)
-    w, h        = pdf_src(temp_path)
+    Path(temp_path).mkdir(parents=True, exist_ok=True)
+    temp_file   = file_to_PDF(filePath, temp_file)
+    w, h        = pdf_src(temp_file)
     template    = watermark_template(watermark = watermark, page_w = w, page_h = h)
-    output_name = apply_watermark(filename = temp_path, mask = template, output_name = out_path)
+    output_name = apply_watermark(filename = temp_file, mask = template, output_name = out_path)
 
     if not(filePath.lower().endswith("pdf")):
-        remove_temp(temp_path)
+        remove_temp(temp_file)

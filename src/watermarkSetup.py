@@ -65,14 +65,15 @@ class NumberSpinBox(QDoubleSpinBox):
 
 	def value(self):
 		value = super(NumberSpinBox, self).value()
-		return int(value) if (self.decimals == 0) else float(value)
+		return int(value) if (self.decimals() == 0) else float(value)
 
 	def setValue(self, value):
+
 		corce_val = self.default_value
 		try:
-			corce_val = round(float(value), self.decimals)
+			corce_val = round(float(value), self.decimals())
 			corce_val = sorted([self.minimum(), corce_val, self.maximum()])[1]
-			
+	
 		except:
 			pass
 
@@ -169,6 +170,7 @@ class WatermarkUI(QWidget):
 				pass
 
 	def value(self):
+
 		return {
 				"watermark"     : self.watermark.text(), 
 				"font_name"     : self.font_name.getFont(), 
@@ -178,7 +180,8 @@ class WatermarkUI(QWidget):
 				"rotate"        : self.rotate.value(), 
 				"row"           : self.row.value(), 
 				"column"        : self.column.value(), 
-			}
+		}
+
 
 	def setValue(self, value_pack):
 		self.watermark    .setText(value_pack.get("watermark"   , "SAMELE"))
