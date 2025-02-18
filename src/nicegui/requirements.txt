@@ -1,4 +1,5 @@
 PyPDF2
 reportlab
 comtypes
-pyqt-toast-notification
+nicegui
+ex4nicegui
